@@ -398,7 +398,7 @@ def write_evaluation_docx(report_path="evaluation_report.docx", accuracy=0.72, p
 
     subtitle = doc.add_paragraph()
     subtitle.paragraph_format.space_after = Pt(18)
-    sub_run = subtitle.add_run("Comprehensive Performance Audit, Rationale, and Error Analysis on 1,200 Benchmark Records")
+    sub_run = subtitle.add_run("Comprehensive Performance Audit, Rationale, and Benchmark Evaluation on Red Herring Prospectus Data")
     sub_run.font.name = "Calibri"
     sub_run.font.size = Pt(12)
     sub_run.font.italic = True
@@ -409,8 +409,8 @@ def write_evaluation_docx(report_path="evaluation_report.docx", accuracy=0.72, p
     meta_table.autofit = False
 
     meta_data = [
-        [("Project:", " PII Redaction Tool Assignment"), ("Target Entity:", " Scaler AI Labs Evaluation")],
-        [("Author:", " Mukund Khandelwal"), ("Benchmark Dataset:", " 1,200 Records (10,800 PII Instances)")],
+        [("Project:", " PII Redaction Tool Assignment"), ("Target Document:", " Red Herring Prospectus.docx")],
+        [("Author:", " Mukund Khandelwal"), ("Benchmark Dataset:", " Red Herring Prospectus + 1,200 Benchmark Records")],
     ]
 
     for row_idx, row in enumerate(meta_table.rows):
