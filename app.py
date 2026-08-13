@@ -1,10 +1,13 @@
+import csv
 import io
 import json
 import tempfile
+import zipfile
 from pathlib import Path
 import streamlit as st
 
 import redactor
+import create_styled_docs
 
 st.set_page_config(
     page_title="Scaler AI Labs | PII Redaction Tool",
@@ -14,7 +17,7 @@ st.set_page_config(
 
 # Header Branding
 st.markdown("### 🚀 Scaler AI Labs")
-st.title("🛡️ PII Redaction Tool")
+st.title("🛡️ Enterprise PII Redaction Tool")
 st.markdown(
     "Detect and redact sensitive Personally Identifiable Information (PII) like names, emails, "
     "phone numbers, addresses, SSNs, credit card numbers, DOBs, and IP addresses."
@@ -77,22 +80,56 @@ if option == "Upload Document":
             st.subheader("Redacted Text")
             st.text_area("Redacted", redacted_text, height=350)
 
-        # Generate DOCX output
+        # Generate Styled DOCX output
         with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_out:
             tmp_out_path = tmp_out.name
 
-        redactor.write_text_to_docx(redacted_text, tmp_out_path)
+        create_styled_docs.generate_professional_redacted_docx(input_text, tmp_out_path)
         docx_bytes = Path(tmp_out_path).read_bytes()
         Path(tmp_out_path).unlink(missing_ok=True)
 
-        st.markdown("---")
-        st.subheader("📥 Download Processed Redacted Output & Reports")
+        # Generate CSV Mapping string
+        csv_buffer = io.StringIO()
+        if mapping:
+            writer = csv.DictWriter(csv_buffer, fieldnames=["type", "original", "replacement"])
+            writer.writeheader()
+            writer.writerows(mapping)
+        csv_data = csv_buffer.getvalue()
 
+        # Build ZIP archive of ALL deliverables
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            zip_file.writestr("redacted_output.docx", docx_bytes)
+            zip_file.writestr("redacted_output.txt", redacted_text.encode("utf-8"))
+            zip_file.writestr("redaction_mapping.json", json.dumps(mapping, indent=2).encode("utf-8"))
+            zip_file.writestr("redaction_mapping.csv", csv_data.encode("utf-8"))
+            zip_file.writestr("eda_summary.json", json.dumps(eda, indent=2).encode("utf-8"))
+            if Path("evaluation_report.docx").exists():
+                zip_file.writestr("evaluation_report.docx", Path("evaluation_report.docx").read_bytes())
+            if Path("evaluation_report.md").exists():
+                zip_file.writestr("evaluation_report.md", Path("evaluation_report.md").read_bytes())
+
+        zip_data = zip_buffer.getvalue()
+
+        st.markdown("---")
+        st.subheader("📦 Download Deliverables & Processed Output")
+
+        # Master ZIP Download Button
+        st.download_button(
+            label="📦 DOWNLOAD ALL DELIVERABLES (ZIP Archive)",
+            data=zip_data,
+            file_name="all_redacted_deliverables.zip",
+            mime="application/zip",
+            type="primary",
+            use_container_width=True
+        )
+
+        st.markdown("##### Individual Download Links:")
         d_col1, d_col2, d_col3, d_col4 = st.columns(4)
 
         with d_col1:
             st.download_button(
-                label="📄 Download Redacted DOCX",
+                label="📄 Redacted DOCX (.docx)",
                 data=docx_bytes,
                 file_name="redacted_output.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -101,7 +138,7 @@ if option == "Upload Document":
 
         with d_col2:
             st.download_button(
-                label="📝 Download Redacted TXT",
+                label="📝 Redacted Text (.txt)",
                 data=redacted_text.encode("utf-8"),
                 file_name="redacted_output.txt",
                 mime="text/plain",
@@ -110,18 +147,18 @@ if option == "Upload Document":
 
         with d_col3:
             st.download_button(
-                label="🔗 Download Mapping JSON",
-                data=json.dumps(mapping, indent=2).encode("utf-8"),
-                file_name="redaction_mapping.json",
-                mime="application/json",
+                label="📊 Mapping CSV for Excel (.csv)",
+                data=csv_data.encode("utf-8"),
+                file_name="redaction_mapping.csv",
+                mime="text/csv",
                 use_container_width=True
             )
 
         with d_col4:
             st.download_button(
-                label="📊 Download EDA Summary JSON",
-                data=json.dumps(eda, indent=2).encode("utf-8"),
-                file_name="eda_summary.json",
+                label="🔗 Mapping JSON (.json)",
+                data=json.dumps(mapping, indent=2).encode("utf-8"),
+                file_name="redaction_mapping.json",
                 mime="application/json",
                 use_container_width=True
             )
@@ -135,6 +172,7 @@ elif option == "Evaluation & Metrics":
 
     report_path = Path("evaluation_report.md")
     accuracy, precision, recall = redactor.write_evaluation_report(test_file, report_path)
+    create_styled_docs.generate_professional_evaluation_docx("evaluation_report.docx")
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Accuracy", f"{accuracy:.2f}")
@@ -146,8 +184,9 @@ elif option == "Evaluation & Metrics":
 
     if Path("evaluation_report.docx").exists():
         st.download_button(
-            label="📥 Download Evaluation Report (.docx)",
+            label="📥 Download Professional Evaluation Report (.docx)",
             data=Path("evaluation_report.docx").read_bytes(),
             file_name="evaluation_report.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            type="primary"
         )
