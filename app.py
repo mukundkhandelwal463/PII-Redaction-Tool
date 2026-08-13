@@ -7,7 +7,6 @@ from pathlib import Path
 import streamlit as st
 
 import redactor
-import create_styled_docs
 
 st.set_page_config(
     page_title="Scaler AI Labs | PII Redaction Tool",
@@ -84,7 +83,7 @@ if option == "Upload Document":
         with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_out:
             tmp_out_path = tmp_out.name
 
-        create_styled_docs.generate_professional_redacted_docx(input_text, tmp_out_path)
+        redactor.write_text_to_docx(redacted_text, tmp_out_path, len(mapping))
         docx_bytes = Path(tmp_out_path).read_bytes()
         Path(tmp_out_path).unlink(missing_ok=True)
 
@@ -172,7 +171,6 @@ elif option == "Evaluation & Metrics":
 
     report_path = Path("evaluation_report.md")
     accuracy, precision, recall = redactor.write_evaluation_report(test_file, report_path)
-    create_styled_docs.generate_professional_evaluation_docx("evaluation_report.docx")
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Accuracy", f"{accuracy:.2f}")
