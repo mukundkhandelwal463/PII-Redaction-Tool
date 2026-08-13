@@ -7,17 +7,21 @@ import streamlit as st
 import redactor
 
 st.set_page_config(
-    page_title="PII Redaction Tool",
+    page_title="Scaler AI Labs | PII Redaction Tool",
     page_icon="🛡️",
     layout="wide"
 )
 
+# Header Branding
+st.markdown("### 🚀 Scaler AI Labs")
 st.title("🛡️ PII Redaction Tool")
 st.markdown(
-    "Detect and redact sensitive Personal Identifiable Information (PII) like names, emails, "
+    "Detect and redact sensitive Personally Identifiable Information (PII) like names, emails, "
     "phone numbers, addresses, SSNs, credit card numbers, DOBs, and IP addresses."
 )
 
+st.sidebar.markdown("## 🚀 Scaler AI Labs")
+st.sidebar.markdown("---")
 st.sidebar.header("⚙️ Options")
 option = st.sidebar.radio("Select Mode", ["Upload Document", "Evaluation & Metrics"])
 
@@ -59,7 +63,7 @@ if option == "Upload Document":
 
         redacted_text, mapping = redactor.redact_text(input_text)
 
-        st.subheader("🔍 PII Detection & Mapping Table")
+        st.subheader("🔍 PII Detection & Replacement Mapping Table")
         if mapping:
             st.dataframe(mapping, use_container_width=True)
         else:
@@ -73,7 +77,7 @@ if option == "Upload Document":
             st.subheader("Redacted Text")
             st.text_area("Redacted", redacted_text, height=350)
 
-        # Generate DOCX for download
+        # Generate DOCX output
         with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_out:
             tmp_out_path = tmp_out.name
 
@@ -81,12 +85,46 @@ if option == "Upload Document":
         docx_bytes = Path(tmp_out_path).read_bytes()
         Path(tmp_out_path).unlink(missing_ok=True)
 
-        st.download_button(
-            label="📥 Download Redacted DOCX",
-            data=docx_bytes,
-            file_name="redacted_output.docx",
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        )
+        st.markdown("---")
+        st.subheader("📥 Download Processed Redacted Output & Reports")
+
+        d_col1, d_col2, d_col3, d_col4 = st.columns(4)
+
+        with d_col1:
+            st.download_button(
+                label="📄 Download Redacted DOCX",
+                data=docx_bytes,
+                file_name="redacted_output.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True
+            )
+
+        with d_col2:
+            st.download_button(
+                label="📝 Download Redacted TXT",
+                data=redacted_text.encode("utf-8"),
+                file_name="redacted_output.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+
+        with d_col3:
+            st.download_button(
+                label="🔗 Download Mapping JSON",
+                data=json.dumps(mapping, indent=2).encode("utf-8"),
+                file_name="redaction_mapping.json",
+                mime="application/json",
+                use_container_width=True
+            )
+
+        with d_col4:
+            st.download_button(
+                label="📊 Download EDA Summary JSON",
+                data=json.dumps(eda, indent=2).encode("utf-8"),
+                file_name="eda_summary.json",
+                mime="application/json",
+                use_container_width=True
+            )
 
 elif option == "Evaluation & Metrics":
     st.header("📊 Model Evaluation & Benchmarks")
@@ -105,3 +143,11 @@ elif option == "Evaluation & Metrics":
 
     if report_path.exists():
         st.markdown(report_path.read_text(encoding="utf-8"))
+
+    if Path("evaluation_report.docx").exists():
+        st.download_button(
+            label="📥 Download Evaluation Report (.docx)",
+            data=Path("evaluation_report.docx").read_bytes(),
+            file_name="evaluation_report.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )

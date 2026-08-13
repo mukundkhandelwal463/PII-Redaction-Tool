@@ -1,6 +1,6 @@
 # Evaluation Report
 
-I tested the script using `synthetic_eval_labeled_realistic_1200.txt`. This file has labelled sample tickets, so the script can compare its answers with the correct answers.
+Test file: `synthetic_eval_labeled_realistic_1200.txt`
 
 Total labelled PII values: 10800
 Total detected PII values: 9440
@@ -24,6 +24,4 @@ Score by PII type:
 - phone: precision 1.00, recall 1.00, correct 1200
 - ssn: precision 1.00, recall 1.00, correct 1200
 
-Result: The script performed well on emails, phone numbers, SSNs, credit cards, and IP addresses. It missed more names, companies, and addresses because those were written in different real-world styles. Some false positives happened because a few sample/reference numbers looked like valid card numbers.
-
-Note: This is synthetic test data. For a real business use case, real documents should also be manually checked because names, companies, and addresses can be written in many different ways.
+The script works better on fixed patterns like emails, phones, SSNs, cards, and IPs. It misses more names, companies, and addresses because they can be written in many styles.
