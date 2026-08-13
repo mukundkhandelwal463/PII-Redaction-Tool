@@ -1,0 +1,23 @@
+Ticket 10293
+Customer: Rashi Patil
+Email: rashhi.patil@gmail.com
+Phone: +91 9876543210
+Company: Bright Future Technologies Private Limited
+Address: 14 Park Street, Pune 411001
+DOB: 03/12/1994
+SSN: 123-45-6789
+Card: 4111 1111 1111 1111
+IP: 192.168.1.23
+
+Ticket 10294
+Customer: Rohan Dey
+Email: rohan.dey@gmail.com
+Phone: +1 415 555 0134
+Company: Green Valley Capital LLP
+Address: 221 Market Road, Mumbai 400013
+Date of Birth: 1988-07-19
+SSN: 987-65-4321
+Card: 5555 5555 5555 4444
+IP: 10.20.30.40
+
+Non-PII fields retained: Order 77881, Ticket 10294, product code A-100.
