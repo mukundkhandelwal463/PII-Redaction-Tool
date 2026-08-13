@@ -120,7 +120,8 @@ def add_heading_styled(doc, text, level):
     return h
 
 
-def write_text_to_docx(text, output_path, mapping_count=0):
+def write_text_to_docx(text, output_path, *args, **kwargs):
+    mapping_count = args[0] if args else kwargs.get("mapping_count", 0)
     if HAS_DOCX:
         doc = Document()
         for section in doc.sections:
