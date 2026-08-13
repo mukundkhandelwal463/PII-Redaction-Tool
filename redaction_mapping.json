@@ -1,0 +1,147 @@
+[
+  {
+    "type": "full_name",
+    "original": "Rashi Patil",
+    "replacement": "John Doe"
+  },
+  {
+    "type": "email",
+    "original": "rashhi.patil@gmail.com",
+    "replacement": "john.doe@example.com"
+  },
+  {
+    "type": "phone",
+    "original": "+91 9876543210",
+    "replacement": "+91 1234567890"
+  },
+  {
+    "type": "company",
+    "original": "Bright Future Technologies Private Limited",
+    "replacement": "Acme Private Limited"
+  },
+  {
+    "type": "address",
+    "original": "14 Park Street, Pune 411001, Maharashtra, India",
+    "replacement": "221B Baker Street, London NW1 6XE"
+  },
+  {
+    "type": "dob",
+    "original": "03/12/1994",
+    "replacement": "01/01/1990"
+  },
+  {
+    "type": "ssn",
+    "original": "123-45-6789",
+    "replacement": "321-54-9876"
+  },
+  {
+    "type": "credit_card",
+    "original": "4111 1111 1111 1111",
+    "replacement": "4000 0000 0000 1000"
+  },
+  {
+    "type": "ip_address",
+    "original": "192.168.1.23",
+    "replacement": "203.0.113.10"
+  },
+  {
+    "type": "full_name",
+    "original": "Rohan Dey",
+    "replacement": "Peter Parker"
+  },
+  {
+    "type": "email",
+    "original": "rohan.dey@gmail.com",
+    "replacement": "peter.parker@example.com"
+  },
+  {
+    "type": "phone",
+    "original": "+1 415 555 0134",
+    "replacement": "+91 9876501234"
+  },
+  {
+    "type": "company",
+    "original": "Green Valley Capital LLP",
+    "replacement": "Northstar Technologies Ltd"
+  },
+  {
+    "type": "address",
+    "original": "221 Market Road, Mumbai 400013, Maharashtra, India",
+    "replacement": "742 Evergreen Terrace, Springfield 49007"
+  },
+  {
+    "type": "dob",
+    "original": "1988-07-19",
+    "replacement": "15/08/1988"
+  },
+  {
+    "type": "ssn",
+    "original": "987-65-4321",
+    "replacement": "111-22-3333"
+  },
+  {
+    "type": "credit_card",
+    "original": "5555 5555 5555 4444",
+    "replacement": "4000 0000 0000 1001"
+  },
+  {
+    "type": "ip_address",
+    "original": "10.20.30.40",
+    "replacement": "198.51.100.25"
+  },
+  {
+    "type": "company",
+    "original": "KSH International Limited",
+    "replacement": "Bluebird Capital LLP"
+  },
+  {
+    "type": "company",
+    "original": "KSH International Limited",
+    "replacement": "Bluebird Capital LLP"
+  },
+  {
+    "type": "email",
+    "original": "cs.connect@kshinternational.com",
+    "replacement": "ananya.sharma@example.com"
+  },
+  {
+    "type": "phone",
+    "original": "+91 20 45053237",
+    "replacement": "+1 202 555 0100"
+  },
+  {
+    "type": "address",
+    "original": "11/3, 11/4 and 11/5 Village Birdewadi, Chakan Taluka - Khed, Pune \u2013 410 501, Maharashtra, India",
+    "replacement": "12 Park Avenue, Mumbai 400001"
+  },
+  {
+    "type": "address",
+    "original": "201, Tower 2, Montreal Business Centre, Off Pallod Farms, Baner, Pune \u2013 411 045, Maharashtra, India",
+    "replacement": "221B Baker Street, London NW1 6XE"
+  },
+  {
+    "type": "full_name",
+    "original": "Meraj Khan",
+    "replacement": "Ananya Sharma"
+  },
+  {
+    "type": "full_name",
+    "original": "Sudhdan Khan",
+    "replacement": "Maya Rao"
+  },
+  {
+    "type": "dob",
+    "original": "12/12/1988",
+    "replacement": "1975-12-10"
+  },
+  {
+    "type": "phone",
+    "original": "2943 6593 3461",
+    "replacement": "+91 1234567890"
+  },
+  {
+    "type": "address",
+    "original": "saray dan shah, KATRAULI, Poore Durgi, Phoolpur, Allahabad, Uttar Pradesh 212402",
+    "replacement": "742 Evergreen Terrace, Springfield 49007"
+  }
+]
