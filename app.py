@@ -31,7 +31,10 @@ if option == "Upload Document":
     st.header("📄 Upload Document for Redaction")
     uploaded_file = st.file_uploader("Upload a .txt or .docx file", type=["txt", "docx"])
 
-    sample_text_button = st.button("Use Sample Ticket Log")
+    col_btn1, col_btn2 = st.columns([1, 2])
+    with col_btn1:
+        sample_text_button = st.button("📋 Use Sample Ticket Log", use_container_width=True)
+
     input_text = ""
     file_name = "sample_ticket_log.txt"
 
@@ -39,6 +42,8 @@ if option == "Upload Document":
         sample_path = Path("sample_ticket_log.txt")
         if sample_path.exists():
             input_text = sample_path.read_text(encoding="utf-8")
+            st.session_state["input_text"] = input_text
+            st.session_state["run_analysis"] = True
             st.success("Loaded sample_ticket_log.txt")
 
     elif uploaded_file is not None:
@@ -51,139 +56,149 @@ if option == "Upload Document":
             Path(tmp_path).unlink(missing_ok=True)
         else:
             raw_content = uploaded_file.getvalue().decode("utf-8", errors="ignore")
-            # If the uploaded file is a labeled benchmark file like synthetic_eval_labeled_realistic_1200.txt
             if "[[" in raw_content and "]]" in raw_content:
                 clean_text, _ = redactor.remove_labels_from_test_file(raw_content)
                 input_text = clean_text
             else:
                 input_text = raw_content
 
-    if input_text:
-        eda = redactor.get_basic_eda(input_text)
+        st.session_state["input_text"] = input_text
 
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Total Lines", eda["total_lines"])
-        col2.metric("Total Words", eda["total_words"])
-        col3.metric("Total Characters", eda["total_characters"])
+    if "input_text" in st.session_state and st.session_state["input_text"]:
+        current_text = st.session_state["input_text"]
 
-        found_items = redactor.find_pii(input_text)
-        col4.metric("PII Spans Found", len(found_items))
+        # Action Button to start/trigger Analysis
+        analyze_btn = st.button("🔍 Start PII Analysis & Redaction", type="primary", use_container_width=True)
 
-        redacted_text, mapping = redactor.redact_text(input_text)
+        if analyze_btn or st.session_state.get("run_analysis", False):
+            st.session_state["run_analysis"] = True
 
-        # Generate Styled DOCX output
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_out:
-            tmp_out_path = tmp_out.name
+            with st.spinner("⚡ Analyzing text, scanning 9 PII categories & performing Luhn algorithm validation..."):
+                eda = redactor.get_basic_eda(current_text)
+                found_items = redactor.find_pii(current_text)
+                redacted_text, mapping = redactor.redact_text(current_text)
 
-        redactor.write_text_to_docx(redacted_text, tmp_out_path, len(mapping))
-        docx_bytes = Path(tmp_out_path).read_bytes()
-        Path(tmp_out_path).unlink(missing_ok=True)
+            st.success(f"✅ Analysis Complete! Identified & Redacted {len(found_items)} PII entities successfully.")
 
-        # Generate CSV Mapping string
-        csv_buffer = io.StringIO()
-        if mapping:
-            writer = csv.DictWriter(csv_buffer, fieldnames=["type", "original", "replacement"])
-            writer.writeheader()
-            writer.writerows(mapping)
-        csv_data = csv_buffer.getvalue()
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Total Lines", eda["total_lines"])
+            col2.metric("Total Words", eda["total_words"])
+            col3.metric("Total Characters", eda["total_characters"])
+            col4.metric("PII Spans Found", len(found_items))
 
-        # Build ZIP archive of ALL deliverables safely
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.writestr("redacted_output.docx", docx_bytes)
-            zip_file.writestr("redacted_output.txt", redacted_text.encode("utf-8"))
-            zip_file.writestr("redaction_mapping.json", json.dumps(mapping, indent=2).encode("utf-8"))
-            zip_file.writestr("redaction_mapping.csv", csv_data.encode("utf-8"))
-            zip_file.writestr("eda_summary.json", json.dumps(eda, indent=2).encode("utf-8"))
-            
-            if Path("evaluation_report.docx").exists():
-                try:
-                    zip_file.writestr("evaluation_report.docx", Path("evaluation_report.docx").read_bytes())
-                except Exception:
-                    pass
-            if Path("evaluation_report.md").exists():
-                try:
-                    zip_file.writestr("evaluation_report.md", Path("evaluation_report.md").read_bytes())
-                except Exception:
-                    pass
+            # Generate Styled DOCX output
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_out:
+                tmp_out_path = tmp_out.name
 
-        zip_data = zip_buffer.getvalue()
+            redactor.write_text_to_docx(redacted_text, tmp_out_path, len(mapping))
+            docx_bytes = Path(tmp_out_path).read_bytes()
+            Path(tmp_out_path).unlink(missing_ok=True)
 
-        # Download Section Banner (Top & Bottom)
-        st.markdown("---")
-        st.subheader("📦 Quick Download Deliverables & Processed Output")
+            # Generate CSV Mapping string
+            csv_buffer = io.StringIO()
+            if mapping:
+                writer = csv.DictWriter(csv_buffer, fieldnames=["type", "original", "replacement"])
+                writer.writeheader()
+                writer.writerows(mapping)
+            csv_data = csv_buffer.getvalue()
 
-        st.download_button(
-            label="📦 DOWNLOAD ALL DELIVERABLES (ZIP Archive)",
-            data=zip_data,
-            file_name="all_redacted_deliverables.zip",
-            mime="application/zip",
-            type="primary",
-            use_container_width=True
-        )
+            # Build ZIP archive of ALL deliverables safely
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+                zip_file.writestr("redacted_output.docx", docx_bytes)
+                zip_file.writestr("redacted_output.txt", redacted_text.encode("utf-8"))
+                zip_file.writestr("redaction_mapping.json", json.dumps(mapping, indent=2).encode("utf-8"))
+                zip_file.writestr("redaction_mapping.csv", csv_data.encode("utf-8"))
+                zip_file.writestr("eda_summary.json", json.dumps(eda, indent=2).encode("utf-8"))
 
-        d_col1, d_col2, d_col3, d_col4 = st.columns(4)
-        with d_col1:
+                if Path("evaluation_report.docx").exists():
+                    try:
+                        zip_file.writestr("evaluation_report.docx", Path("evaluation_report.docx").read_bytes())
+                    except Exception:
+                        pass
+                if Path("evaluation_report.md").exists():
+                    try:
+                        zip_file.writestr("evaluation_report.md", Path("evaluation_report.md").read_bytes())
+                    except Exception:
+                        pass
+
+            zip_data = zip_buffer.getvalue()
+
+            # Download Section Banner (Top & Bottom)
+            st.markdown("---")
+            st.subheader("📦 Quick Download Deliverables & Processed Output")
+
             st.download_button(
-                label="📄 Redacted DOCX (.docx)",
-                data=docx_bytes,
-                file_name="redacted_output.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                use_container_width=True
-            )
-        with d_col2:
-            st.download_button(
-                label="📝 Redacted Text (.txt)",
-                data=redacted_text.encode("utf-8"),
-                file_name="redacted_output.txt",
-                mime="text/plain",
-                use_container_width=True
-            )
-        with d_col3:
-            st.download_button(
-                label="📊 Mapping CSV for Excel (.csv)",
-                data=csv_data.encode("utf-8"),
-                file_name="redaction_mapping.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
-        with d_col4:
-            st.download_button(
-                label="🔗 Mapping JSON (.json)",
-                data=json.dumps(mapping, indent=2).encode("utf-8"),
-                file_name="redaction_mapping.json",
-                mime="application/json",
+                label="📦 DOWNLOAD ALL DELIVERABLES (ZIP Archive)",
+                data=zip_data,
+                file_name="all_redacted_deliverables.zip",
+                mime="application/zip",
+                type="primary",
                 use_container_width=True
             )
 
-        st.markdown("---")
-        st.subheader(f"🔍 PII Replacement Table ({len(mapping)} Detected Entities)")
-        if mapping:
-            st.dataframe(mapping, height=350, use_container_width=True)
-        else:
-            st.info("No PII detected in this document.")
+            d_col1, d_col2, d_col3, d_col4 = st.columns(4)
+            with d_col1:
+                st.download_button(
+                    label="📄 Redacted DOCX (.docx)",
+                    data=docx_bytes,
+                    file_name="redacted_output.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    use_container_width=True
+                )
+            with d_col2:
+                st.download_button(
+                    label="📝 Redacted Text (.txt)",
+                    data=redacted_text.encode("utf-8"),
+                    file_name="redacted_output.txt",
+                    mime="text/plain",
+                    use_container_width=True
+                )
+            with d_col3:
+                st.download_button(
+                    label="📊 Mapping CSV for Excel (.csv)",
+                    data=csv_data.encode("utf-8"),
+                    file_name="redaction_mapping.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+            with d_col4:
+                st.download_button(
+                    label="🔗 Mapping JSON (.json)",
+                    data=json.dumps(mapping, indent=2).encode("utf-8"),
+                    file_name="redaction_mapping.json",
+                    mime="application/json",
+                    use_container_width=True
+                )
 
-        st.markdown("---")
-        col_left, col_right = st.columns(2)
-
-        preview_limit = 20000
-        is_large = len(input_text) > preview_limit
-
-        with col_left:
-            st.subheader("Original Document Text")
-            if is_large:
-                st.caption(f"Showing first {preview_limit} characters preview (Total: {len(input_text)} chars). Use Download buttons above to get full output.")
-                st.text_area("Original Preview", input_text[:preview_limit] + "\n\n... [Truncated for fast preview]", height=500)
+            st.markdown("---")
+            st.subheader(f"🔍 PII Replacement Table ({len(mapping)} Detected Entities)")
+            if mapping:
+                st.dataframe(mapping, height=350, use_container_width=True)
             else:
-                st.text_area("Original", input_text, height=500)
+                st.info("No PII detected in this document.")
 
-        with col_right:
-            st.subheader("Redacted Output Text")
-            if is_large:
-                st.caption(f"Showing first {preview_limit} characters preview (Total: {len(redacted_text)} chars). Use Download buttons above to get full output.")
-                st.text_area("Redacted Preview", redacted_text[:preview_limit] + "\n\n... [Truncated for fast preview]", height=500)
-            else:
-                st.text_area("Redacted", redacted_text, height=500)
+            st.markdown("---")
+            col_left, col_right = st.columns(2)
+
+            preview_limit = 20000
+            is_large = len(current_text) > preview_limit
+
+            with col_left:
+                st.subheader("Original Document Text")
+                if is_large:
+                    st.caption(f"Showing first {preview_limit} characters preview (Total: {len(current_text)} chars). Use Download buttons above to get full output.")
+                    st.text_area("Original Preview", current_text[:preview_limit] + "\n\n... [Truncated for fast preview]", height=500)
+                else:
+                    st.text_area("Original", current_text, height=500)
+
+            with col_right:
+                st.subheader("Redacted Output Text")
+                if is_large:
+                    st.caption(f"Showing first {preview_limit} characters preview (Total: {len(redacted_text)} chars). Use Download buttons above to get full output.")
+                    st.text_area("Redacted Preview", redacted_text[:preview_limit] + "\n\n... [Truncated for fast preview]", height=500)
+                else:
+                    st.text_area("Redacted", redacted_text, height=500)
 
 elif option == "Evaluation & Metrics":
     st.header("📊 Model Evaluation & Benchmarks")
