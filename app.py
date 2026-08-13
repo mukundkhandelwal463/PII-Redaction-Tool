@@ -67,17 +67,18 @@ if option == "Upload Document":
 
         st.subheader("🔍 PII Detection & Replacement Mapping Table")
         if mapping:
-            st.dataframe(mapping, use_container_width=True)
+            st.dataframe(mapping, height=300, use_container_width=True)
         else:
             st.info("No PII detected in this document.")
 
+        st.markdown("---")
         col_left, col_right = st.columns(2)
         with col_left:
-            st.subheader("Original Text")
-            st.text_area("Original", input_text, height=350)
+            st.subheader("Original Document Text")
+            st.text_area("Full Original Text", input_text, height=550)
         with col_right:
-            st.subheader("Redacted Text")
-            st.text_area("Redacted", redacted_text, height=350)
+            st.subheader("Redacted Output Text")
+            st.text_area("Full Redacted Text", redacted_text, height=550)
 
         # Generate Styled DOCX output
         with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_out:
