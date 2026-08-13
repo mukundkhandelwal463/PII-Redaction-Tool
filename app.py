@@ -50,7 +50,13 @@ if option == "Upload Document":
             input_text = redactor.read_input_file(tmp_path)
             Path(tmp_path).unlink(missing_ok=True)
         else:
-            input_text = uploaded_file.getvalue().decode("utf-8")
+            raw_content = uploaded_file.getvalue().decode("utf-8", errors="ignore")
+            # If the uploaded file is a labeled benchmark file like synthetic_eval_labeled_realistic_1200.txt
+            if "[[" in raw_content and "]]" in raw_content:
+                clean_text, _ = redactor.remove_labels_from_test_file(raw_content)
+                input_text = clean_text
+            else:
+                input_text = raw_content
 
     if input_text:
         eda = redactor.get_basic_eda(input_text)
@@ -64,21 +70,6 @@ if option == "Upload Document":
         col4.metric("PII Spans Found", len(found_items))
 
         redacted_text, mapping = redactor.redact_text(input_text)
-
-        st.subheader("🔍 PII Detection & Replacement Mapping Table")
-        if mapping:
-            st.dataframe(mapping, height=300, use_container_width=True)
-        else:
-            st.info("No PII detected in this document.")
-
-        st.markdown("---")
-        col_left, col_right = st.columns(2)
-        with col_left:
-            st.subheader("Original Document Text")
-            st.text_area("Full Original Text", input_text, height=550)
-        with col_right:
-            st.subheader("Redacted Output Text")
-            st.text_area("Full Redacted Text", redacted_text, height=550)
 
         # Generate Styled DOCX output
         with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_out:
@@ -111,10 +102,10 @@ if option == "Upload Document":
 
         zip_data = zip_buffer.getvalue()
 
+        # Download Section Banner (Top & Bottom)
         st.markdown("---")
-        st.subheader("📦 Download Deliverables & Processed Output")
+        st.subheader("📦 Quick Download Deliverables & Processed Output")
 
-        # Master ZIP Download Button
         st.download_button(
             label="📦 DOWNLOAD ALL DELIVERABLES (ZIP Archive)",
             data=zip_data,
@@ -124,9 +115,7 @@ if option == "Upload Document":
             use_container_width=True
         )
 
-        st.markdown("##### Individual Download Links:")
         d_col1, d_col2, d_col3, d_col4 = st.columns(4)
-
         with d_col1:
             st.download_button(
                 label="📄 Redacted DOCX (.docx)",
@@ -135,7 +124,6 @@ if option == "Upload Document":
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 use_container_width=True
             )
-
         with d_col2:
             st.download_button(
                 label="📝 Redacted Text (.txt)",
@@ -144,7 +132,6 @@ if option == "Upload Document":
                 mime="text/plain",
                 use_container_width=True
             )
-
         with d_col3:
             st.download_button(
                 label="📊 Mapping CSV for Excel (.csv)",
@@ -153,7 +140,6 @@ if option == "Upload Document":
                 mime="text/csv",
                 use_container_width=True
             )
-
         with d_col4:
             st.download_button(
                 label="🔗 Mapping JSON (.json)",
@@ -162,6 +148,35 @@ if option == "Upload Document":
                 mime="application/json",
                 use_container_width=True
             )
+
+        st.markdown("---")
+        st.subheader(f"🔍 PII Replacement Table ({len(mapping)} Detected Entities)")
+        if mapping:
+            st.dataframe(mapping, height=350, use_container_width=True)
+        else:
+            st.info("No PII detected in this document.")
+
+        st.markdown("---")
+        col_left, col_right = st.columns(2)
+
+        preview_limit = 20000
+        is_large = len(input_text) > preview_limit
+
+        with col_left:
+            st.subheader("Original Document Text")
+            if is_large:
+                st.caption(f"Showing first {preview_limit} characters preview (Total: {len(input_text)} chars). Use Download buttons above to get full output.")
+                st.text_area("Original Preview", input_text[:preview_limit] + "\n\n... [Truncated for fast preview]", height=500)
+            else:
+                st.text_area("Original", input_text, height=500)
+
+        with col_right:
+            st.subheader("Redacted Output Text")
+            if is_large:
+                st.caption(f"Showing first {preview_limit} characters preview (Total: {len(redacted_text)} chars). Use Download buttons above to get full output.")
+                st.text_area("Redacted Preview", redacted_text[:preview_limit] + "\n\n... [Truncated for fast preview]", height=500)
+            else:
+                st.text_area("Redacted", redacted_text, height=500)
 
 elif option == "Evaluation & Metrics":
     st.header("📊 Model Evaluation & Benchmarks")
