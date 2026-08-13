@@ -87,7 +87,7 @@ if option == "Upload Document":
             writer.writerows(mapping)
         csv_data = csv_buffer.getvalue()
 
-        # Build ZIP archive of ALL deliverables
+        # Build ZIP archive of ALL deliverables safely
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
             zip_file.writestr("redacted_output.docx", docx_bytes)
@@ -95,10 +95,17 @@ if option == "Upload Document":
             zip_file.writestr("redaction_mapping.json", json.dumps(mapping, indent=2).encode("utf-8"))
             zip_file.writestr("redaction_mapping.csv", csv_data.encode("utf-8"))
             zip_file.writestr("eda_summary.json", json.dumps(eda, indent=2).encode("utf-8"))
+            
             if Path("evaluation_report.docx").exists():
-                zip_file.writestr("evaluation_report.docx", Path("evaluation_report.docx").read_bytes())
+                try:
+                    zip_file.writestr("evaluation_report.docx", Path("evaluation_report.docx").read_bytes())
+                except Exception:
+                    pass
             if Path("evaluation_report.md").exists():
-                zip_file.writestr("evaluation_report.md", Path("evaluation_report.md").read_bytes())
+                try:
+                    zip_file.writestr("evaluation_report.md", Path("evaluation_report.md").read_bytes())
+                except Exception:
+                    pass
 
         zip_data = zip_buffer.getvalue()
 
@@ -197,10 +204,13 @@ elif option == "Evaluation & Metrics":
         st.markdown(report_path.read_text(encoding="utf-8"))
 
     if Path("evaluation_report.docx").exists():
-        st.download_button(
-            label="📥 Download Professional Evaluation Report (.docx)",
-            data=Path("evaluation_report.docx").read_bytes(),
-            file_name="evaluation_report.docx",
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            type="primary"
-        )
+        try:
+            st.download_button(
+                label="📥 Download Professional Evaluation Report (.docx)",
+                data=Path("evaluation_report.docx").read_bytes(),
+                file_name="evaluation_report.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                type="primary"
+            )
+        except Exception:
+            pass

@@ -624,7 +624,10 @@ def write_evaluation_docx(report_path="evaluation_report.docx", accuracy=0.72, p
         r_d = bp.add_run(desc)
         r_d.font.color.rgb = RGBColor(51, 65, 85)
 
-    doc.save(report_path)
+    try:
+        doc.save(report_path)
+    except Exception:
+        pass
 
 
 def write_evaluation_report(test_file_path, report_path):
